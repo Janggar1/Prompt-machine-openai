@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prompt Machine Image</title>
+  <meta name="description" content="Prompt machine untuk membuat prompt image AI yang rapi, detail, dan konsisten." />
+  <style>
+    :root {
+      --bg: #0f1220;
+      --panel: rgba(255,255,255,.08);
+      --panel2: rgba(255,255,255,.12);
+      --text: #f8fafc;
+      --muted: #aab2c8;
+      --brand: #8b5cf6;
+      --brand2: #22d3ee;
+      --danger: #fb7185;
+      --ok: #34d399;
+      --border: rgba(255,255,255,.14);
+      --shadow: 0 20px 60px rgba(0,0,0,.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(139,92,246,.35), transparent 28%),
+        radial-gradient(circle at 90% 15%, rgba(34,211,238,.22), transparent 24%),
+        radial-gradient(circle at 50% 100%, rgba(236,72,153,.18), transparent 28%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .wrap {
+      width: min(1220px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    header {
+      display: grid;
+      gap: 14px;
+      padding: 26px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      width: fit-content;
+      padding: 8px 12px;
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      color: #dbeafe;
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 58px);
+      line-height: .98;
+      letter-spacing: -.06em;
+    }
+
+    header p {
+      margin: 0;
+      max-width: 820px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, .9fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.075);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      overflow: hidden;
+    }
+
+    .card h2 {
+      margin: 0;
+      padding: 20px 20px 0;
+      font-size: 20px;
+      letter-spacing: -.02em;
+    }
+
+    .card .sub {
+      padding: 4px 20px 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    form, .outputBox {
+      padding: 20px;
+      display: grid;
+      gap: 14px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      color: #d9def0;
+      font-weight: 650;
+      font-size: 13px;
+    }
+
+    textarea, input, select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(4,7,20,.56);
+      color: var(--text);
+      padding: 12px 13px;
+      outline: none;
+      font: inherit;
+      resize: vertical;
+      min-height: 44px;
+    }
+
+    textarea:focus, input:focus, select:focus {
+      border-color: rgba(34,211,238,.65);
+      box-shadow: 0 0 0 4px rgba(34,211,238,.12);
+    }
+
+    textarea.big { min-height: 110px; }
+    textarea.mid { min-height: 78px; }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 500;
+      line-height: 1.45;
+    }
+
+    .fileDrop {
+      border: 1px dashed rgba(255,255,255,.28);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,.045);
+      display: grid;
+      gap: 8px;
+    }
+
+    .preview {
+      display: none;
+      width: 100%;
+      max-height: 240px;
+      object-fit: contain;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.25);
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button {
+      border: 0;
+      border-radius: 16px;
+      padding: 12px 15px;
+      color: white;
+      font-weight: 800;
+      cursor: pointer;
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      box-shadow: 0 12px 30px rgba(34,211,238,.16);
+      transition: transform .15s ease, filter .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); filter: brightness(1.08); }
+    button:disabled { opacity: .58; cursor: not-allowed; transform: none; }
+
+    button.secondary {
+      background: rgba(255,255,255,.12);
+      border: 1px solid var(--border);
+      box-shadow: none;
+    }
+
+    button.danger {
+      background: rgba(251,113,133,.2);
+      border: 1px solid rgba(251,113,133,.35);
+      box-shadow: none;
+    }
+
+    .score {
+      display: grid;
+      gap: 9px;
+      padding: 14px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(0,0,0,.2);
+    }
+
+    .scoreTop {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .bar {
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      overflow: hidden;
+    }
+
+    .bar > div {
+      width: 0%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--brand), var(--brand2), var(--ok));
+      transition: width .25s ease;
+    }
+
+    .output {
+      min-height: 420px;
+      white-space: pre-wrap;
+      word-break: break-word;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: rgba(4,7,20,.58);
+      padding: 15px;
+      color: #eef2ff;
+      line-height: 1.55;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 13px;
+      overflow: auto;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px 2px;
+      flex-wrap: wrap;
+    }
+
+    .tab {
+      padding: 9px 11px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.08);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tab.active {
+      color: white;
+      background: rgba(139,92,246,.35);
+      border-color: rgba(139,92,246,.55);
+    }
+
+    .notice {
+      border: 1px solid rgba(34,211,238,.28);
+      background: rgba(34,211,238,.09);
+      color: #cffafe;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .error {
+      border-color: rgba(251,113,133,.35);
+      background: rgba(251,113,133,.12);
+      color: #ffe4e6;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .wrap { width: min(100% - 18px, 1220px); padding-top: 14px; }
+      header { padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="badge">AI Image Prompt Machine · Vercel Ready</div>
+      <h1>Bikin prompt image yang detail, konsisten, dan siap tempel.</h1>
+      <p>
+        Masukkan ide atau upload gambar referensi. Tool ini akan menyusun prompt lengkap:
+        karakter, pose, komposisi, kamera, lighting, style, quality tags, negative prompt, dan variasi.
+      </p>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <h2>Input Prompt</h2>
+        <div class="sub">Semakin lengkap input, semakin tinggi konsistensi output. Upload gambar opsional untuk analisis visual.</div>
+
+        <form id="promptForm">
+          <label>
+            Ide utama / deskripsi kasar
+            <textarea id="idea" class="big" placeholder="Contoh: anime cat girl rambut hitam, mata kuning, oversized white t-shirt, kamar terang, suasana soft sunlight..." required></textarea>
+            <span class="hint">Wajib. Tulis konsep utama, karakter, suasana, dan hasil yang kamu mau.</span>
+          </label>
+
+          <div class="row">
+            <label>
+              Target generator
+              <select id="engine">
+                <option value="General">General / universal</option>
+                <option value="SDXL">Stable Diffusion XL</option>
+                <option value="Pony/Anime">Pony / Anime model</option>
+                <option value="Midjourney">Midjourney</option>
+                <option value="FLUX">FLUX</option>
+                <option value="DALL·E">DALL·E / GPT Image</option>
+              </select>
+            </label>
+
+            <label>
+              Bahasa output
+              <select id="language">
+                <option value="English">English prompt</option>
+                <option value="Indonesian">Indonesia</option>
+                <option value="Both">English + Indonesia</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="row">
+            <label>
+              Rasio gambar
+              <select id="aspect">
+                <option value="1:1 square">1:1 Square</option>
+                <option value="9:16 vertical">9:16 Vertical</option>
+                <option value="16:9 landscape">16:9 Landscape</option>
+                <option value="4:5 portrait">4:5 Portrait</option>
+                <option value="3:2 cinematic">3:2 Cinematic</option>
+              </select>
+            </label>
+
+            <label>
+              Gaya visual
+              <select id="tone">
+                <option value="anime, clean lineart, smooth shading">Anime clean</option>
+                <option value="semi-realistic, cinematic, highly detailed">Semi-realistic cinematic</option>
+                <option value="photorealistic, natural lighting">Photorealistic</option>
+                <option value="cute chibi, soft colors">Cute chibi</option>
+                <option value="dark fantasy, dramatic lighting">Dark fantasy</option>
+                <option value="minimalist, clean composition">Minimalist</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Detail karakter / objek
+            <textarea id="details" class="mid" placeholder="Warna rambut, mata, outfit, aksesoris, ekspresi, pose, umur dewasa bila perlu, ciri khas yang wajib sama..."></textarea>
+          </label>
+
+          <label>
+            Background, kamera, lighting
+            <textarea id="scene" class="mid" placeholder="Bedroom, white sheets, sunlight, soft shadows, close-up, eye-level camera, depth of field..."></textarea>
+          </label>
+
+          <label>
+            Negative prompt / hal yang dihindari
+            <textarea id="negative" class="mid" placeholder="bad anatomy, extra fingers, lowres, blurry, watermark, text, deformed face, inconsistent character..."></textarea>
+          </label>
+
+          <label>
+            Catatan reference / konsistensi
+            <textarea id="referenceNotes" class="mid" placeholder="Contoh: pertahankan warna rambut, bentuk mata, outfit utama, ekspresi, proporsi karakter, jangan ubah tone warna..."></textarea>
+          </label>
+
+          <div class="fileDrop">
+            <label>
+              Upload gambar referensi opsional
+              <input id="imageFile" type="file" accept="image/png,image/jpeg,image/webp" />
+              <span class="hint">Opsional. Gambar dikirim ke serverless function untuk dianalisis AI. Jangan upload data pribadi kalau websitenya publik.</span>
+            </label>
+            <img id="preview" class="preview" alt="Preview gambar referensi" />
+            <button type="button" id="clearImage" class="danger" style="display:none">Hapus gambar</button>
+          </div>
+
+          <div class="score">
+            <div class="scoreTop">
+              <span>Prompt completeness score</span>
+              <span id="scoreText">0%</span>
+            </div>
+            <div class="bar"><div id="scoreBar"></div></div>
+            <div class="small">Ini bukan jaminan akurasi, hanya skor kelengkapan input.</div>
+          </div>
+
+          <div class="actions">
+            <button id="aiBtn" type="submit">Generate dengan API</button>
+            <button id="localBtn" type="button" class="secondary">Build lokal tanpa API</button>
+            <button id="resetBtn" type="button" class="secondary">Reset</button>
+          </div>
+
+          <div id="status" class="notice">
+            API key tidak ditaruh di HTML. Simpan di Vercel Environment Variables dengan nama <b>OPENAI_API_KEY</b>.
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Output</h2>
+        <div class="sub">Hasil bisa langsung dicopy ke generator image.</div>
+        <div class="tabs">
+          <button class="tab active" data-format="full" type="button">Full Prompt</button>
+          <button class="tab" data-format="short" type="button">Short</button>
+          <button class="tab" data-format="negative" type="button">Negative</button>
+        </div>
+
+        <div class="outputBox">
+          <div class="actions">
+            <button id="copyBtn" type="button">Copy</button>
+            <button id="downloadBtn" type="button" class="secondary">Download .txt</button>
+          </div>
+          <pre id="output" class="output">Output prompt akan muncul di sini.</pre>
+          <div class="small">
+            Catatan: tidak ada prompt machine yang benar-benar 100%. Untuk hasil paling mirip, pakai reference image, seed tetap, model sama, dan setting generation yang sama.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const fields = ["idea", "details", "scene", "negative", "referenceNotes"];
+    let imageDataUrl = "";
+    let lastOutput = {
+      full: "Output prompt akan muncul di sini.",
+      short: "",
+      negative: ""
+    };
+    let activeFormat = "full";
+
+    function setStatus(message, isError = false) {
+      const el = $("status");
+      el.innerHTML = message;
+      el.className = "notice" + (isError ? " error" : "");
+    }
+
+    function calculateScore() {
+      const values = fields.map(id => $(id).value.trim());
+      let score = 0;
+      if (values[0].length > 15) score += 24;
+      if (values[1].length > 20) score += 18;
+      if (values[2].length > 20) score += 18;
+      if (values[3].length > 10) score += 12;
+      if (values[4].length > 10) score += 12;
+      if (imageDataUrl) score += 16;
+      score = Math.min(100, score);
+      $("scoreText").textContent = score + "%";
+      $("scoreBar").style.width = score + "%";
+    }
+
+    fields.forEach(id => $(id).addEventListener("input", calculateScore));
+
+    $("imageFile").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const maxBytes = 4.5 * 1024 * 1024;
+      if (file.size > maxBytes) {
+        setStatus("Ukuran gambar terlalu besar. Maksimal sekitar 4.5 MB.", true);
+        e.target.value = "";
+        return;
+      }
+
+      imageDataUrl = await fileToDataUrl(file);
+      $("preview").src = imageDataUrl;
+      $("preview").style.display = "block";
+      $("clearImage").style.display = "inline-flex";
+      calculateScore();
+    });
+
+    $("clearImage").addEventListener("click", () => {
+      imageDataUrl = "";
+      $("imageFile").value = "";
+      $("preview").src = "";
+      $("preview").style.display = "none";
+      $("clearImage").style.display = "none";
+      calculateScore();
+    });
+
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function getPayload() {
+      return {
+        idea: $("idea").value.trim(),
+        engine: $("engine").value,
+        language: $("language").value,
+        aspect: $("aspect").value,
+        tone: $("tone").value,
+        details: $("details").value.trim(),
+        scene: $("scene").value.trim(),
+        negative: $("negative").value.trim(),
+        referenceNotes: $("referenceNotes").value.trim(),
+        imageDataUrl
+      };
+    }
+
+    function localBuild() {
+      const p = getPayload();
+      const baseNegative = p.negative || "low quality, lowres, blurry, bad anatomy, extra fingers, deformed hands, distorted face, inconsistent character, watermark, text, logo, cropped, jpeg artifacts";
+
+      const full = [
+        "FINAL PROMPT:",
+        `${p.idea}`,
+        "",
+        "SUBJECT / CHARACTER:",
+        p.details || "Describe the main subject clearly with consistent features, outfit, expression, and pose.",
+        "",
+        "SCENE / COMPOSITION:",
+        p.scene || "Clean composition, strong focal point, balanced framing, detailed background, depth of field.",
+        "",
+        "STYLE:",
+        `${p.tone}, high detail, polished rendering, consistent color palette, visually coherent`,
+        "",
+        "CAMERA / LIGHTING:",
+        `aspect ratio ${p.aspect}, professional composition, soft highlights, natural shadows, clean depth, sharp focus`,
+        "",
+        "REFERENCE CONSISTENCY:",
+        p.referenceNotes || "Preserve the main identity, color palette, outfit, pose direction, and important visual details.",
+        "",
+        "TARGET GENERATOR:",
+        p.engine,
+        "",
+        "NEGATIVE PROMPT:",
+        baseNegative,
+        "",
+        "SHORT VERSION:",
+        `${p.idea}, ${p.details}, ${p.scene}, ${p.tone}, ${p.aspect}, high detail, sharp focus, consistent character`,
+      ].join("\n");
+
+      lastOutput = {
+        full,
+        short: `${p.idea}, ${p.details}, ${p.scene}, ${p.tone}, ${p.aspect}, high detail, sharp focus, consistent character`,
+        negative: baseNegative
+      };
+      renderOutput();
+      setStatus("Prompt dibuat secara lokal tanpa API. Untuk analisis gambar dan refinement lebih pintar, gunakan Generate dengan API.");
+    }
+
+    async function generateWithApi(event) {
+      event.preventDefault();
+
+      const payload = getPayload();
+      if (!payload.idea) {
+        setStatus("Isi ide utama dulu.", true);
+        return;
+      }
+
+      $("aiBtn").disabled = true;
+      setStatus("Memproses dengan API...");
+
+      try {
+        const res = await fetch("/api/generate-prompt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "API error.");
+        }
+
+        const text = data.prompt || "";
+        lastOutput = splitOutput(text);
+        renderOutput();
+        setStatus("Selesai. Prompt dibuat dengan API dan siap dicopy.");
+      } catch (err) {
+        setStatus("Gagal memakai API: " + err.message + " Pakai tombol Build lokal tanpa API sebagai fallback.", true);
+      } finally {
+        $("aiBtn").disabled = false;
+      }
+    }
+
+    function splitOutput(text) {
+      const negativeMatch = text.match(/NEGATIVE PROMPT:?([\s\S]*?)(?:\n\n|$)/i);
+      const shortMatch = text.match(/SHORT VERSION:?([\s\S]*?)(?:\n\n|$)/i);
+      return {
+        full: text,
+        short: shortMatch ? shortMatch[1].trim() : text.split("\n").slice(0, 8).join("\n"),
+        negative: negativeMatch ? negativeMatch[1].trim() : "bad anatomy, low quality, blurry, watermark, text"
+      };
+    }
+
+    function renderOutput() {
+      $("output").textContent = lastOutput[activeFormat] || lastOutput.full;
+    }
+
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activeFormat = btn.dataset.format;
+        renderOutput();
+      });
+    });
+
+    $("promptForm").addEventListener("submit", generateWithApi);
+    $("localBtn").addEventListener("click", localBuild);
+
+    $("resetBtn").addEventListener("click", () => {
+      $("promptForm").reset();
+      imageDataUrl = "";
+      $("preview").src = "";
+      $("preview").style.display = "none";
+      $("clearImage").style.display = "none";
+      lastOutput = { full: "Output prompt akan muncul di sini.", short: "", negative: "" };
+      activeFormat = "full";
+      document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+      document.querySelector('[data-format="full"]').classList.add("active");
+      renderOutput();
+      calculateScore();
+      setStatus('API key tidak ditaruh di HTML. Simpan di Vercel Environment Variables dengan nama <b>OPENAI_API_KEY</b>.');
+    });
+
+    $("copyBtn").addEventListener("click", async () => {
+      await navigator.clipboard.writeText($("output").textContent);
+      setStatus("Output berhasil dicopy.");
+    });
+
+    $("downloadBtn").addEventListener("click", () => {
+      const blob = new Blob([$("output").textContent], { type: "text/plain;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "image-prompt.txt";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    calculateScore();
+  </script>
+</body>
+</html>
